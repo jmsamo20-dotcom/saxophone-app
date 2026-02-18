@@ -59,10 +59,10 @@ export default function HomePage() {
       return;
     }
 
-    setProcessing(true, 10, "오디오 분석 준비 중...");
+    setProcessing(true, 10, "서버에 업로드 중...");
 
     try {
-      setProcessing(true, 30, "음높이 인식 중...");
+      setProcessing(true, 30, "음높이 인식 중... (1~3분 걸릴 수 있어요)");
 
       const result = await convertAudio({
         file,

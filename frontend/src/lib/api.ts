@@ -1,6 +1,8 @@
 import { API_BASE_URL } from "./constants";
 import { ConvertResponse, TranspositionKey } from "./types";
 
+const CONVERT_TIMEOUT_MS = 5 * 60 * 1000; // 5분
+
 export async function convertAudio(params: {
   file?: File;
   youtubeUrl?: string;
@@ -23,17 +25,30 @@ export async function convertAudio(params: {
     formData.append("tempo_bpm", String(params.tempoBpm));
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/convert`, {
-    method: "POST",
-    body: formData,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), CONVERT_TIMEOUT_MS);
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "알 수 없는 오류" }));
-    throw new Error(error.detail || `서버 오류 (${response.status})`);
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/convert`, {
+      method: "POST",
+      body: formData,
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: "알 수 없는 오류" }));
+      throw new Error(error.detail || `서버 오류 (${response.status})`);
+    }
+
+    return response.json();
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("서버 응답 시간이 초과되었습니다. 더 짧은 녹음으로 다시 시도해 주세요.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-
-  return response.json();
 }
 
 export function getDownloadUrl(jobId: string, format: "musicxml" | "midi"): string {

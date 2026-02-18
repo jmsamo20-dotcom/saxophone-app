@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from pydub import AudioSegment
@@ -5,7 +6,10 @@ from pydub import AudioSegment
 from config import ALLOWED_AUDIO_EXTENSIONS, MAX_UPLOAD_SIZE_BYTES
 from utils.exceptions import AudioTooLargeError, UnsupportedFormatError, AppError
 
-MAX_AUDIO_DURATION_SEC = 300  # 5분
+logger = logging.getLogger(__name__)
+
+MAX_AUDIO_DURATION_SEC = 300  # 5분 (업로드 허용 한도)
+PROCESS_TRIM_SEC = 90  # basic-pitch에 넣을 최대 길이 (서버 부하 제한)
 
 
 class AudioTooLongError(AppError):
@@ -37,10 +41,15 @@ def convert_to_wav(input_path: Path, output_path: Path) -> Path:
     else:
         raise UnsupportedFormatError(ext)
 
-    # 길이 체크 (5분 초과 거절)
+    # 5분 초과 거절
     duration_sec = len(audio) / 1000.0
     if duration_sec > MAX_AUDIO_DURATION_SEC:
         raise AudioTooLongError()
+
+    # 90초 초과 시 앞부분만 사용 (서버 처리 속도 확보)
+    if duration_sec > PROCESS_TRIM_SEC:
+        logger.info("Audio %.1fs → trimmed to %ds", duration_sec, PROCESS_TRIM_SEC)
+        audio = audio[:PROCESS_TRIM_SEC * 1000]
 
     # mono + 22050Hz + 16-bit → basic-pitch 최적 + 파일 크기 절감
     audio = audio.set_channels(1).set_frame_rate(22050).set_sample_width(2)
