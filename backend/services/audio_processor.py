@@ -3,7 +3,14 @@ from pathlib import Path
 from pydub import AudioSegment
 
 from config import ALLOWED_AUDIO_EXTENSIONS, MAX_UPLOAD_SIZE_BYTES
-from utils.exceptions import AudioTooLargeError, UnsupportedFormatError
+from utils.exceptions import AudioTooLargeError, UnsupportedFormatError, AppError
+
+MAX_AUDIO_DURATION_SEC = 300  # 5분
+
+
+class AudioTooLongError(AppError):
+    def __init__(self):
+        super().__init__(400, "최대 5분까지 지원합니다. 더 짧은 구간을 녹음해 주세요.")
 
 
 def validate_audio_file(file_path: Path, file_size: int) -> None:
@@ -18,7 +25,6 @@ def validate_audio_file(file_path: Path, file_size: int) -> None:
 def convert_to_wav(input_path: Path, output_path: Path) -> Path:
     ext = input_path.suffix.lower()
     if ext == ".wav":
-        # Already WAV, but ensure mono 16-bit for basic-pitch
         audio = AudioSegment.from_wav(str(input_path))
     elif ext == ".mp3":
         audio = AudioSegment.from_mp3(str(input_path))
@@ -31,7 +37,12 @@ def convert_to_wav(input_path: Path, output_path: Path) -> Path:
     else:
         raise UnsupportedFormatError(ext)
 
-    # Convert to mono, 44100Hz, 16-bit
-    audio = audio.set_channels(1).set_frame_rate(44100).set_sample_width(2)
+    # 길이 체크 (5분 초과 거절)
+    duration_sec = len(audio) / 1000.0
+    if duration_sec > MAX_AUDIO_DURATION_SEC:
+        raise AudioTooLongError()
+
+    # mono + 22050Hz + 16-bit → basic-pitch 최적 + 파일 크기 절감
+    audio = audio.set_channels(1).set_frame_rate(22050).set_sample_width(2)
     audio.export(str(output_path), format="wav")
     return output_path

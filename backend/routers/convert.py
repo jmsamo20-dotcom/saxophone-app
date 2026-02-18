@@ -68,13 +68,10 @@ async def convert_audio(
         validate_audio_file(upload_path, len(content))
         upload_path.write_bytes(content)
 
-        # Convert to WAV if needed (only when FFmpeg available)
-        if ext == ".wav":
-            wav_path = upload_path
-        else:
-            from services.audio_processor import convert_to_wav
-            wav_path = job_dir / "audio.wav"
-            convert_to_wav(upload_path, wav_path)
+        # Convert to WAV (모든 포맷 → mono 22050Hz WAV로 최적화)
+        from services.audio_processor import convert_to_wav
+        wav_path = job_dir / "audio.wav"
+        convert_to_wav(upload_path, wav_path)
 
         # Step 2: Pitch detection (audio → MIDI)
         midi_path = job_dir / "output.mid"

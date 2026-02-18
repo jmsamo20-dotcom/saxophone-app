@@ -2,6 +2,8 @@
 
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 
+const MAX_DURATION = 300;
+
 interface MicRecorderProps {
   onRecordingComplete: (file: File) => void;
   disabled?: boolean;
@@ -14,7 +16,9 @@ function formatTime(seconds: number): string {
 }
 
 export default function MicRecorder({ onRecordingComplete, disabled }: MicRecorderProps) {
-  const { isRecording, duration, startRecording, stopRecording, error } = useAudioRecorder();
+  const { isRecording, duration, startRecording, stopRecording, error } = useAudioRecorder({
+    maxDuration: MAX_DURATION,
+  });
 
   const handleToggle = async () => {
     if (isRecording) {
@@ -59,6 +63,9 @@ export default function MicRecorder({ onRecordingComplete, disabled }: MicRecord
           <>
             <p className="text-red-600 font-semibold text-lg">{formatTime(duration)}</p>
             <p className="text-sm text-gray-500">녹음 중... 정지 버튼을 누르세요</p>
+            <p className="text-xs text-gray-400 mt-1">
+              최대 {Math.floor(MAX_DURATION / 60)}분 후 자동 정지
+            </p>
           </>
         ) : (
           <p className="text-gray-600">버튼을 눌러 녹음을 시작하세요</p>

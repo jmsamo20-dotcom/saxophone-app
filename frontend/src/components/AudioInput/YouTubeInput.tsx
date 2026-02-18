@@ -10,7 +10,7 @@ interface YouTubeInputProps {
   wavOnly?: boolean;
 }
 
-const MAX_DURATION = 30;
+const MAX_DURATION = 300;
 
 function extractVideoId(url: string): string | null {
   const patterns = [
@@ -117,7 +117,7 @@ export default function YouTubeInput({
             소리가 작으면 악보가 잘 안 나올 수 있어요. 볼륨을 올려 주세요.
           </p>
           <p className="text-yellow-600">
-            권장 녹음 길이: 10~30초
+            최대 5분까지 녹음 가능 (권장: 1~3분)
           </p>
         </div>
       )}
@@ -181,7 +181,7 @@ export default function YouTubeInput({
                     유튜브에서 ▶ 재생을 눌러주세요
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {MAX_DURATION}초 후 자동 정지
+                    최대 {Math.floor(MAX_DURATION / 60)}분 후 자동 정지
                   </p>
                 </div>
               ) : (
