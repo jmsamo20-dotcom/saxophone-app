@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f9fafb;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-size: 16px;
+}
+
+/* Mobile-first: larger touch targets */
+@media (max-width: 640px) {
+  body {
+    font-size: 18px;
+  }
+
+  button, a, input, select {
+    min-height: 48px;
+  }
+}
+
+/* ===== Print CSS: 악보만 깔끔하게 출력 ===== */
+@media print {
+  /* 헤더, 버튼, 네비게이션 등 숨기기 */
+  header,
+  .print-hidden {
+    display: none !important;
+  }
+
+  /* 배경색/그림자 제거 */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+  }
+
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 악보 영역만 보이게 */
+  .print-sheet {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* SVG 악보가 페이지에 맞게 */
+  .print-sheet svg {
+    width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+
+  .sheet-page {
+    page-break-after: always;
+    margin-bottom: 0 !important;
+  }
+
+  .sheet-page:last-child {
+    page-break-after: auto;
+  }
+}

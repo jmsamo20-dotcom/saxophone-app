@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+
+# Temp files
+backend/temp/
+!backend/temp/.gitkeep
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / Dev
+backend/test_audio.wav
+test_mvp_plus.py
+start.bat
