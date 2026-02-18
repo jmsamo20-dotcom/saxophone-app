@@ -51,7 +51,7 @@ export default function AudioInput({ onFileSelected, onConvert, disabled, wavOnl
           <FileUpload onFileSelected={onFileSelected} disabled={disabled} wavOnly={wavOnly} />
         )}
         {inputMode === "record" && (
-          <MicRecorder onRecordingComplete={onFileSelected} disabled={disabled} />
+          <MicRecorder onRecordingComplete={onFileSelected} disabled={disabled} wavOnly={wavOnly} />
         )}
         {inputMode === "youtube" && (
           <YouTubeInput onConvert={onConvert} disabled={disabled} wavOnly={wavOnly} />

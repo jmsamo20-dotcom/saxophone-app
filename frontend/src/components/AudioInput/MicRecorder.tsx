@@ -7,6 +7,7 @@ const MAX_DURATION = 300;
 interface MicRecorderProps {
   onRecordingComplete: (file: File) => void;
   disabled?: boolean;
+  wavOnly?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -15,7 +16,7 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function MicRecorder({ onRecordingComplete, disabled }: MicRecorderProps) {
+export default function MicRecorder({ onRecordingComplete, disabled, wavOnly }: MicRecorderProps) {
   const { isRecording, duration, startRecording, stopRecording, error } = useAudioRecorder({
     maxDuration: MAX_DURATION,
   });
@@ -30,6 +31,20 @@ export default function MicRecorder({ onRecordingComplete, disabled }: MicRecord
       await startRecording();
     }
   };
+
+  // 녹음은 항상 webm/opus → FFmpeg 필수
+  if (wavOnly) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+          <p className="text-yellow-800 font-medium">현재 서버는 WAV만 지원합니다</p>
+          <p className="text-yellow-600 text-sm mt-1">
+            마이크 녹음은 FFmpeg가 필요합니다. 파일 업로드(WAV)를 이용해 주세요.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-4 py-6">

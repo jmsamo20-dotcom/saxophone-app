@@ -1,14 +1,16 @@
 FROM python:3.11-slim
 
-# FFmpeg (pydub/audio), libcairo2 (cairosvg/PDF), libsndfile1 (librosa/basic-pitch)
+# FFmpeg, libcairo2(PDF), libsndfile1(librosa/basic-pitch)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ffmpeg \
       libcairo2 \
       libsndfile1 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ffmpeg -version | head -1
 
-# onnxruntime thread 제한 → 메모리 절약
+# ffmpeg 경로를 명시적으로 보장
+ENV PATH="/usr/bin:${PATH}"
 ENV OMP_NUM_THREADS=1
 
 WORKDIR /app
@@ -21,5 +23,4 @@ RUN mkdir -p temp
 
 EXPOSE 8000
 
-# Render는 $PORT 환경변수를 자동 주입
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
