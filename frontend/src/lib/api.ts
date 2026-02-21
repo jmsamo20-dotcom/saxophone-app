@@ -64,7 +64,7 @@ export async function fetchMusicXML(jobId: string): Promise<string> {
   return response.text();
 }
 
-export async function checkHealth(): Promise<{ status: string; ffmpeg: boolean }> {
+export async function checkHealth(): Promise<{ status: string; ffmpeg: boolean; model_ready: boolean }> {
   const response = await fetch(`${API_BASE_URL}/api/health`);
   return response.json();
 }

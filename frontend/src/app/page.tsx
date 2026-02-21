@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/store/useAppStore";
 import { convertAudio, checkHealth } from "@/lib/api";
@@ -31,6 +31,7 @@ export default function HomePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [wavOnly, setWavOnly] = useState(false);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 페이지 진입 시 이전 결과 클리어
   useState(() => { reset(); });
@@ -64,6 +65,14 @@ export default function HomePage() {
     try {
       setProcessing(true, 30, "음높이 인식 중... (1~3분 걸릴 수 있어요)");
 
+      // 가짜 진행률: 30→90%까지 1초마다 +1%
+      progressIntervalRef.current = setInterval(() => {
+        const current = useAppStore.getState().progress;
+        if (current < 90) {
+          setProcessing(true, current + 1, "음높이 인식 중... (1~3분 걸릴 수 있어요)");
+        }
+      }, 1000);
+
       const result = await convertAudio({
         file,
         transposition,
@@ -71,7 +80,12 @@ export default function HomePage() {
         tempoBpm: tempoEnabled ? tempoBpm : undefined,
       });
 
-      setProcessing(true, 90, "악보 생성 완료!");
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+
+      setProcessing(true, 100, "악보 생성 완료!");
       setResult(result);
 
       setTimeout(() => {
@@ -79,6 +93,10 @@ export default function HomePage() {
         router.push("/result");
       }, 500);
     } catch (err) {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
       setProcessing(false);
       setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
     }

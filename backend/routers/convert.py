@@ -1,4 +1,7 @@
+import asyncio
+import logging
 import shutil
+import time
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
@@ -10,6 +13,8 @@ from services.music_converter import midi_to_musicxml
 from services.simplifier import simplify_score
 from utils.file_manager import create_job_dir
 from utils.exceptions import AppError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -49,6 +54,7 @@ async def convert_audio(
         )
 
     job_id, job_dir = create_job_dir()
+    t0 = time.time()
 
     try:
         # Step 1: Save uploaded file
@@ -56,28 +62,36 @@ async def convert_audio(
         content = await audio_file.read()
         validate_audio_file(upload_path, len(content))
         upload_path.write_bytes(content)
+        logger.info("[%s] Step 1: 파일 저장 완료 (%.1fs)", job_id, time.time() - t0)
 
-        # Step 2: Convert to WAV (mono 22050Hz, trim to 90s)
+        # Step 2: Convert to WAV (mono 22050Hz)
         from services.audio_processor import convert_to_wav
         wav_path = job_dir / "audio.wav"
-        convert_to_wav(upload_path, wav_path)
+        await asyncio.to_thread(convert_to_wav, upload_path, wav_path)
+        logger.info("[%s] Step 2: ffmpeg 변환 완료 (%.1fs)", job_id, time.time() - t0)
 
         # Step 3: Pitch detection (audio → MIDI)
         midi_path = job_dir / "output.mid"
-        detect_pitch(wav_path, midi_path, tempo_bpm=tempo_bpm)
+        await asyncio.to_thread(detect_pitch, wav_path, midi_path, tempo_bpm)
+        logger.info("[%s] Step 3: detect_pitch 완료 (%.1fs)", job_id, time.time() - t0)
 
         # Step 4: MIDI → MusicXML (with transposition)
         musicxml_path = job_dir / "score.musicxml"
-        musicxml_path, metadata = midi_to_musicxml(
-            midi_path, musicxml_path, transposition, tempo_bpm=tempo_bpm
+        musicxml_path, metadata = await asyncio.to_thread(
+            midi_to_musicxml, midi_path, musicxml_path, transposition, tempo_bpm
         )
+        logger.info("[%s] Step 4: musicxml 변환 완료 (%.1fs)", job_id, time.time() - t0)
 
         # Step 5: Simplify if requested
         if simplify:
             simplified_path = job_dir / "score_simplified.musicxml"
-            simplify_score(musicxml_path, simplified_path, minimum_note_length=0.25)
+            await asyncio.to_thread(
+                simplify_score, musicxml_path, simplified_path, 0.25
+            )
             shutil.copy2(str(simplified_path), str(job_dir / "score.musicxml"))
             metadata["simplified"] = True
+
+        logger.info("[%s] 전체 완료 (%.1fs)", job_id, time.time() - t0)
 
         base_url = f"/api/download/{job_id}"
         download_urls = {
@@ -92,6 +106,8 @@ async def convert_audio(
         )
 
     except AppError as e:
+        logger.error("[%s] AppError (%.1fs): %s", job_id, time.time() - t0, e.message)
         raise HTTPException(e.status_code, e.message)
     except Exception as e:
+        logger.error("[%s] 예외 (%.1fs): %s", job_id, time.time() - t0, str(e))
         raise HTTPException(500, f"처리 중 오류가 발생했습니다: {str(e)}")

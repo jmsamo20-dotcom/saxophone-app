@@ -23,4 +23,5 @@ RUN mkdir -p temp
 
 EXPOSE 8000
 
+# --workers 2 권장이나 Render 무료 플랜(512MB)에서는 메모리 부족으로 1 유지
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

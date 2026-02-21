@@ -8,13 +8,13 @@ from utils.exceptions import AudioTooLargeError, UnsupportedFormatError, AppErro
 
 logger = logging.getLogger(__name__)
 
-MAX_AUDIO_DURATION_SEC = 300  # 5분 (업로드 허용 한도)
-PROCESS_TRIM_SEC = 90  # basic-pitch에 넣을 최대 길이
+MAX_AUDIO_DURATION_SEC = 60  # 서버 성능상 60초 제한
+PROCESS_TRIM_SEC = 60  # basic-pitch에 넣을 최대 길이
 
 
 class AudioTooLongError(AppError):
     def __init__(self):
-        super().__init__(400, "최대 5분까지 지원합니다. 더 짧은 구간을 녹음해 주세요.")
+        super().__init__(400, "현재 서버 성능상 60초 이하 음원만 지원합니다.")
 
 
 class ConversionError(AppError):
